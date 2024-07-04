@@ -31,7 +31,7 @@ void INIT_PWM(sctimer_pwm_signal_param_t* pwmParam, uint32_t *event){
 	    }
 
 	/* Start the timer */
-	SCTIMER_StartTimer(SCT0, kSCTIMER_Counter_L);
+	SCTIMER_StartTimer(SCT0, kSCTIMER_Counter_U);
 
 }
 
