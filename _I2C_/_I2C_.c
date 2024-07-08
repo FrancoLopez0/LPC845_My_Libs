@@ -10,6 +10,7 @@
 #include "_I2C_.h"
 
 int32_t rxBuff[14];
+hmc5883l_t magnetometer;
 
 void I2C1_INIT_WRITE(uint8_t address){
 	while ((I2C1->STAT & 0x1) == 0); //WAIT STATE PENDING
@@ -112,7 +113,8 @@ void hmc5883l_init(void){
 	hmc5883l(txBuff, 2);
 
 	txBuff[0] = 0x09; //Config
-	txBuff[1] = 0x1 | (0x2<<3) | (0x00<<4) | (0x2<<6); // continuous measurement mode
+	txBuff[1] = 0x1 | (0x2<<2) | (0x01<<4) | (0x0<<6); // continuous measurement mode
+//	txBuff[1] = 0x1 | (0x2<<3) | (0x01<<4) | (0x0<<6); // continuous measurement mode
 //	txBuff[1] = 0x1D;
 	hmc5883l(txBuff, 2);
 
@@ -157,11 +159,16 @@ void hmc5883l_get(hmc5883l_t* sense){
 	sense->my= (int16_t)(rxBuff[2] | rxBuff[3] << 8);
 	sense->mz= (int16_t)(rxBuff[4] | rxBuff[5] << 8);
 
-	sense->azimuth= atan2(sense->my,sense->mx) * 180.0 / PI;
+}
+
+void hmc5883l_azimuth(hmc5883l_t* sense){
+	sense->azimuth= atan2((float)sense->my,(float)sense->mz) * 180.0 / PI;
 	sense->azimuth+=sense->magnetic_declination;
-	//if(sense->azimuth<0){
-	//	sense->azimuth +=360;
-	//}
+		//sense->set_angle_objective -=
+	if(sense->azimuth<0){
+		sense->azimuth +=360;
+	}
+	sense->delta_angle = sense->set_angle_objective - sense->azimuth ; //Angular distance at desired orientation
 }
 
 void mpu6050_update(int32_t *rxBuff, uint8_t buff_size){
@@ -199,14 +206,89 @@ void I2C1_INIT(void){
 void _printf_var_int(char* text,int num){
 	if(num<0){
 		num = ~num;
-		PRINTF("%s : -%d\r\n",text, num);
+		PRINTF("\"%s\" : \"-%d\"", text, num);
+//		PRINTF("%s : -%d\r\n",text, num);
 		return;
 	}
 	else{
-		PRINTF("%s : %d\r\n",text, num);
+//		PRINTF("%s : %d\r\n",text, num);
+		PRINTF("\"%s\" : \"%d\"", text, num);
 		return;
 	}
 }
 
-
+//@brief Example
+//
+// int main(void) {
+//	BOARD_InitBootPins();
+//	BOARD_InitBootClocks();
+//	BOARD_InitBootPeripherals();
+//	#ifndef BOARD_INIT_DEBUG_CONSOLE_PERIPHERAL
+//	        /* Init FSL debug console. */
+//	    BOARD_InitDebugConsole();
+//	#endif
+//
+//	SYSTICK_INIT();
+//
+//    I2C1_INIT();
+//
+//    hmc5883l_init();
+//
+//    hmc5883l_update(rxBuff);
+//
+//    //mpu6050_init();
+//
+//    //mpu6050_update(rxBuff,14);
+//    // mpu6050_t mpu;
+//
+//   // mpu.aY = 23.0;
+//    hmc5883l_t magnetometer;
+//    magnetometer.magnetic_declination = -10.2;
+//    while(1) {
+//
+//    	hmc5883l_get(&magnetometer);
+//
+//    	//mpu6050_update(rxBuff,14);
+//
+////        read = rxBuff[0]<<8 | rxBuff[1];
+////        read = rxBuff[0]<<8 | rxBuff[1];
+////        mpu.aX = read / 8192;
+//
+////        read = rxBuff[2]<<8 | rxBuff[3];
+////        mpu.aY = ((float)read) / 8192;
+//
+//        //PRINTF("==========================\r\n");
+//
+////
+////        PRINTF("AX: %f", mpu.aX);
+////        PRINTF("AY: %f", mpu.aY);
+////        PRINTF("X_H:%d\r\n", rxBuff[0]);
+////        PRINTF("X_L:%d\r\n", rxBuff[1]);
+////
+////        PRINTF("Y_H:%d\r\n", rxBuff[2]);
+////        PRINTF("Y_L:%d\r\n", rxBuff[3]);
+////
+////        PRINTF("Z_H:%d\r\n", rxBuff[4]);
+////        PRINTF("Z_L:%d\r\n", rxBuff[5]);
+////    	PRINTF("RAW x: %d\t", raw[0]);
+//    	_printf_var_int("RAW x", magnetometer.mx);
+//    	//PRINTF("RAW y: %d\t", raw[1]);
+//    	_printf_var_int("RAW y", magnetometer.my);
+//    	//PRINTF("RAW CA2 x: -%d\t", raw[1]);
+//
+////    	PRINTF("RAW z: %d\t", raw[2]);
+//    	_printf_var_int("RAW z", magnetometer.mz);
+//    	_printf_var_int("AZIMUTH", magnetometer.azimuth);
+//    	//PRINTF("HEADING: %d\r\n", heading);
+//
+////
+////        PRINTF("Y_TOT:%f\r\n", mpu.aY);
+////
+////        PRINTF("==========================\r\n");
+//        //PRINTF("acc_z:%d\r\n", rxBuff[0]);
+//        //delay_ms(100);
+//    }
+//    return 0 ;
+//}
+//
 #endif /* I2C__C_ */

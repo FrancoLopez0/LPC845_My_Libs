@@ -16,23 +16,26 @@
 #define PWR_MNG_MPU6050 0x6B
 #define RST_SIGNAL_CFG_MPU6050 0x68
 #define RST_ALL_SIGNALS_MPU6050 0x7
-
 #include "LPC845.h"
 #include "fsl_debug_console.h"
 #include "fsl_i2c.h"
 #include "math.h"
 #include "DELAY.h"
-
+#include "fsl_pint.h"
+#include "fsl_gpio.h"
 extern int32_t rxBuff[14];
 
 typedef struct{
 	int mx;
 	int my;
 	int mz;
-	int azimuth;
+	float azimuth;
 	float magnetic_declination;
+	int set_angle_objective;
+	int delta_angle;
 }hmc5883l_t;
 
+extern hmc5883l_t magnetometer;
 typedef struct{
 	float aX;
 	float aY;
@@ -59,7 +62,11 @@ void mpu6050_init(void);
 
 void hmc5883l_init(void);
 
+void hmc5883l_azimuth(hmc5883l_t*);
+
 void hmc5883l_update(int32_t *);
+
+void SET_ANGLE_OBJECTIVE(pint_pin_int_t, uint32_t);
 
 void hmc5883l_get(hmc5883l_t*);
 
